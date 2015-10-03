@@ -177,6 +177,8 @@ public class Notification {
         if (isRepeating()) {
             getAlarmMgr().setRepeating(AlarmManager.RTC_WAKEUP,
                     triggerTime, options.getRepeatInterval(), pi);
+        } else if (options.isExactTrigger()) {
+            getAlarmMgr().setExact(AlarmManager.RTC_WAKEUP, triggerTime, pi);
         } else {
             getAlarmMgr().set(AlarmManager.RTC_WAKEUP, triggerTime, pi);
         }

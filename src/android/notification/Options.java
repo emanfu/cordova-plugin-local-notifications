@@ -234,6 +234,13 @@ public class Options {
     }
 
     /**
+     * Whether the trigger time should be exact
+     */
+    public boolean isExactTrigger() {
+        return options.optBoolean("exactTrigger", false);
+    }
+
+    /**
      * @return
      *      The notification color for LED
      */
