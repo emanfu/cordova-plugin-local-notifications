@@ -98,16 +98,18 @@ NSString* const DEFAULT_SOUND = @"res://platform_default";
  */
 - (NSString*) alertBody
 {
-    NSString* title = [self title];
+    //NSString* title = [self title];
     NSString* msg = [self text];
 
     NSString* alertBody = msg;
 
+    /*
     if (![self stringIsNullOrEmpty:title])
     {
         alertBody = [NSString stringWithFormat:@"%@\n%@",
                      title, msg];
     }
+     */
 
     return alertBody;
 }
@@ -179,6 +181,16 @@ NSString* const DEFAULT_SOUND = @"res://platform_default";
 
     return NSCalendarUnitEra;
 }
+
+/**
+ * action category
+ */
+- (NSString *) category
+{
+    NSString* cat = [dict objectForKey:@"category"];
+    return cat;
+}
+
 
 #pragma mark -
 #pragma mark Methods

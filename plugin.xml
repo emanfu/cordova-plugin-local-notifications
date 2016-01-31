@@ -15,7 +15,7 @@
 
     <license>Apache 2.0</license>
 
-    <author>Sebastián Katzer</author>
+    <author>Sebastián Katzer, Eman Fu</author>
 
     <!-- cordova -->
     <engines>
@@ -74,6 +74,8 @@
         <header-file src="src/ios/UILocalNotification+APPLocalNotification.h" />
         <source-file src="src/ios/UILocalNotification+APPLocalNotification.m" />
 
+        <header-file src="src/ios/AppDelegate+APPLocalNotifification.h" />
+        <source-file src="src/ios/AppDelegate+APPLocalNotifification.m" />
     </platform>
 
     <!-- android -->

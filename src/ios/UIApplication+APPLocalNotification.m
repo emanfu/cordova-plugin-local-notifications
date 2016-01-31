@@ -54,7 +54,7 @@
 /**
  * Ask for permission to schedule local notifications.
  */
-- (void) registerPermissionToScheduleLocalNotifications
+- (void) registerPermissionToScheduleLocalNotifications:(NSSet *)categories
 {
     if ([[UIApplication sharedApplication]
          respondsToSelector:@selector(registerUserNotificationSettings:)])
@@ -68,7 +68,7 @@
         types = settings.types|UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound;
 
         settings = [UIUserNotificationSettings settingsForTypes:types
-                                                     categories:nil];
+                                                     categories:categories];
 
         [[UIApplication sharedApplication]
          registerUserNotificationSettings:settings];

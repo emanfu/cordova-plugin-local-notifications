@@ -63,11 +63,7 @@ exports.setDefaults = function (newDefaults) {
  *      The scope for the callback function
  */
 exports.schedule = function (opts, callback, scope) {
-    this.registerPermission(function(granted) {
-
-        if (!granted)
-            return;
-
+    var scheduleIt = function() {
         var notifications = Array.isArray(opts) ? opts : [opts];
 
         for (var i = 0; i < notifications.length; i++) {
@@ -78,6 +74,19 @@ exports.schedule = function (opts, callback, scope) {
         }
 
         this.exec('schedule', notifications, callback, scope);
+    }.bind(this);
+
+    this.hasPermission(function(granted) {
+        if (granted) {
+            scheduleIt();
+            return;
+        }
+
+        this.registerPermission(function (granted) {
+            if (!granted)
+                return;
+            scheduleIt();
+        }, this);
     }, this);
 };
 
@@ -408,12 +417,22 @@ exports.hasPermission = function (callback, scope) {
 /**
  * Register permission to show notifications if not already granted.
  *
+ * @param {Object?} opts
+ *      Array of action category properties
  * @param {Function} callback
  *      The function to be exec as the callback
  * @param {Object?} scope
  *      The callback function's scope
  */
-exports.registerPermission = function (callback, scope) {
+exports.registerPermission = function (opts, callback, scope) {
+    console.log('registerPermission called, opts=%s', JSON.stringify(opts));
+    // opts is optional
+    if (typeof(opts) === 'function') {
+        opts = null;
+        scope = callback;
+        callback = opts;
+    }
+
     var fn = this.createCallbackFn(callback, scope);
 
     if (device.platform != 'iOS') {
@@ -421,7 +440,16 @@ exports.registerPermission = function (callback, scope) {
         return;
     }
 
-    exec(fn, null, 'LocalNotification', 'registerPermission', []);
+    var params = [];
+
+    if (Array.isArray(opts)) {
+        params = opts;
+    } else if (opts) {
+        params.push(opts);
+    }
+
+    console.log('calling plugin, params=%s', JSON.stringify(params));
+    exec(fn, null, 'LocalNotification', 'registerPermission', params);
 };
 
 

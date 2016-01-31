@@ -305,13 +305,15 @@ exports.hasPermission = function (callback, scope) {
 /**
  * Register permission to show notifications if not already granted.
  *
+ * @param {Object} opts
+ *      Array of action category properties
  * @param {Function} callback
  *      The function to be exec as the callback
  * @param {Object?} scope
  *      The callback function's scope
  */
-exports.registerPermission = function (callback, scope) {
-    this.core.registerPermission(callback, scope);
+exports.registerPermission = function (opts, callback, scope) {
+    this.core.registerPermission(opts, callback, scope);
 };
 
 
@@ -366,5 +368,5 @@ exports.on = function (event, callback, scope) {
  *      The function to be exec as callback
  */
 exports.un = function (event, callback) {
-    this.core.un(event, callback, scope);
+    this.core.un(event, callback);
 };

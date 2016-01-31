@@ -25,7 +25,7 @@
 #import "APPLocalNotificationOptions.h"
 #import "UIApplication+APPLocalNotification.h"
 #import "UILocalNotification+APPLocalNotification.h"
-#import "AppDelegate+APPRegisterUserNotificationSettings.h"
+#import "AppDelegate+APPLocalNotifification.h"
 
 @interface APPLocalNotification ()
 
@@ -52,9 +52,11 @@
  */
 - (void) deviceready:(CDVInvokedUrlCommand*)command
 {
+    NSLog(@"localNotif: deviceready, eventQueue count=%lu", (unsigned long)[eventQueue count]);
     deviceready = YES;
 
     for (NSString* js in eventQueue) {
+        NSLog(@"calling js: %@", js);
         [self.commandDelegate evalJs:js];
     }
 
@@ -459,7 +461,7 @@
 }
 
 /**
- * Ask for permission to show badges.
+ * Ask for permission to setting local notifications.
  */
 - (void) registerPermission:(CDVInvokedUrlCommand*)command
 {
@@ -469,7 +471,62 @@
         _command = command;
 
         [self.commandDelegate runInBackground:^{
-            [self.app registerPermissionToScheduleLocalNotifications];
+            
+            NSMutableSet *categories = [[NSMutableSet alloc] init];
+            for (NSDictionary* actionCategory in command.arguments) {
+                NSString *categoryId = actionCategory[@"categoryId"];
+                NSArray *actionOptsAray = actionCategory[@"actions"];
+                if (categoryId == nil || actionOptsAray == nil) {
+                    // wrong action category format
+                    CDVPluginResult*  result = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR
+                                                                 messageAsString:@"invalid action categories"];
+                    
+                    [self.commandDelegate sendPluginResult:result
+                                                callbackId:command.callbackId];
+                    return;
+                }
+                
+                NSMutableArray *defaultActions = [[NSMutableArray alloc] init];
+                NSMutableArray *minimalActions = [[NSMutableArray alloc] init];
+                for (NSDictionary* actionOpts in actionOptsAray) {
+                    UIMutableUserNotificationAction *action =
+                    [[UIMutableUserNotificationAction alloc] init];
+                    action.identifier = actionOpts[@"actionId"];
+                    action.title = actionOpts[@"title"];
+                    NSString* activationMode = actionOpts[@"activationMode"];
+                    
+                    // default to foreground
+                    action.activationMode = UIUserNotificationActivationModeForeground;
+                    if ([activationMode isEqualToString:@"background"]) {
+                        action.activationMode = UIUserNotificationActivationModeBackground;
+                    } else if (![activationMode isEqualToString:@"foreground"]) {
+                        NSLog(@"invalid activatioMode: %@. Using default foreground.", activationMode);
+                    }
+                    BOOL value = [[actionOpts objectForKey:@"destructive"] boolValue];
+                    action.destructive = value;
+                    value = [[actionOpts objectForKey:@"authenticationRequired"] boolValue];
+                    action.authenticationRequired = value;
+                    BOOL minimal = [[actionOpts objectForKey:@"minimal"] boolValue];
+                    [defaultActions addObject:action];
+                    if (minimal) {
+                        [minimalActions addObject:action];
+                    }
+                }
+                
+                UIMutableUserNotificationCategory *category =
+                [[UIMutableUserNotificationCategory alloc] init];
+                
+                category.identifier = categoryId;
+                [category setActions:defaultActions
+                          forContext:UIUserNotificationActionContextDefault];
+                
+                [category setActions:minimalActions
+                          forContext:UIUserNotificationActionContextMinimal];
+                
+                [categories addObject:category];
+            }
+
+            [self.app registerPermissionToScheduleLocalNotifications:categories];
         }];
     } else {
         [self hasPermission:command];
@@ -612,6 +669,26 @@
 }
 
 /**
+ * Called when app has started
+ * (by clicking an action for a local notification).
+ */
+- (void) handleActionWithIdentifier:(NSNotification*)notification
+{
+    NSLog(@"===> handleActionWithIdentifier called");
+    NSDictionary* actionOptions = [notification userInfo];
+    NSString *identifier = [actionOptions objectForKey:@"identifier"];
+    UILocalNotification* localNotification = [actionOptions objectForKey:@"notification"];
+    void (^completionHandler)(void) = [actionOptions objectForKey:@"completionHandler"];
+    
+    [self fireEvent:@"action" actionId:identifier notification:localNotification];
+
+    if (completionHandler) {
+        NSLog(@"handleActionWithIdentifier: calling completionHandler");
+        completionHandler();
+    }
+}
+
+/**
  * Called on otification settings registration is completed.
  */
 - (void) didRegisterUserNotificationSettings:(UIUserNotificationSettings*)settings
@@ -622,6 +699,7 @@
         _command = NULL;
     }
 }
+
 
 #pragma mark -
 #pragma mark Life Cycle
@@ -649,6 +727,11 @@
     [center addObserver:self
                selector:@selector(didRegisterUserNotificationSettings:)
                    name:UIApplicationRegisterUserNotificationSettings
+                 object:nil];
+    
+    [center addObserver:self
+               selector:@selector(handleActionWithIdentifier:)
+                   name:UIApplicationHandleActionWithIdentifier
                  object:nil];
 }
 
@@ -728,6 +811,29 @@
           @"cordova.plugins.notification.local.core.fireEvent('%@', %@)",
           event, params];
 
+    if (deviceready) {
+        [self.commandDelegate evalJs:js];
+    } else {
+        [self.eventQueue addObject:js];
+    }
+}
+
+/**
+ * Fire event for local notification.
+ */
+- (void) fireEvent:(NSString*)event actionId:(NSString*)actionId notification:(UILocalNotification*)notification
+{
+    NSString* js;
+    NSString* args = [notification encodeToJSON];
+        
+    NSString *params = [NSString stringWithFormat:
+                        @"'%@', %@,'%@'",
+                        actionId, args, self.applicationState];
+    
+    js = [NSString stringWithFormat:
+          @"cordova.plugins.notification.local.core.fireEvent('%@', %@)",
+          event, params];
+    
     if (deviceready) {
         [self.commandDelegate evalJs:js];
     } else {

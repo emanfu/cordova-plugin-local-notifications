@@ -31,14 +31,15 @@ var exec    = require('cordova/exec'),
 
 // Default values
 exports._defaults = {
-    text:  '',
-    title: '',
-    sound: 'res://platform_default',
-    badge: 0,
-    id:    0,
-    data:  undefined,
-    every: undefined,
-    at:    undefined
+    text:       '',
+    title:      '',
+    sound:      'res://platform_default',
+    badge:      0,
+    id:         0,
+    data:       undefined,
+    every:      undefined,
+    at:         undefined,
+    category:   undefined
 };
 
 // listener
@@ -241,6 +242,7 @@ exports.fireEvent = function (event) {
     var args     = Array.apply(null, arguments).slice(1),
         listener = this._listener[event];
 
+    console.log('localNotif: fireEvent called. event=' + event + ', listener len=' + (listener ? listener.length : 'none'));
     if (!listener)
         return;
 
