@@ -41,7 +41,7 @@ NSInteger const APPLocalNotificationTypeTriggered = 2;
  */
 - (id) initWithOptions:(NSDictionary*)dict
 {
-    self = [super init];
+    self = [self init];
 
     [self setUserInfo:dict];
     [self __init];
@@ -170,9 +170,12 @@ NSInteger const APPLocalNotificationTypeTriggered = 2;
 
     [obj removeObjectForKey:@"updatedAt"];
 
+    if (obj == NULL || obj.count == 0)
+        return json;
+
     data = [NSJSONSerialization dataWithJSONObject:obj
                                            options:NSJSONWritingPrettyPrinted
-                                             error:Nil];
+                                             error:NULL];
 
     json = [[NSString alloc] initWithData:data
                                  encoding:NSUTF8StringEncoding];
