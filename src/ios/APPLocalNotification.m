@@ -25,6 +25,7 @@
 #import "APPLocalNotificationOptions.h"
 #import "UIApplication+APPLocalNotification.h"
 #import "UILocalNotification+APPLocalNotification.h"
+#import "AppDelegate+APPLocalNotifification.h"
 
 @interface APPLocalNotification ()
 
@@ -707,7 +708,11 @@
 - (void) pluginInitialize
 {
     eventQueue = [[NSMutableArray alloc] init];
+
+    NSNotificationCenter* center = [NSNotificationCenter
+                                    defaultCenter];
     
+
     [center addObserver:self
                selector:@selector(handleActionWithIdentifier:)
                    name:UIApplicationHandleActionWithIdentifier
