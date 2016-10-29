@@ -322,6 +322,17 @@ exports.registerPermission = function (opts, callback, scope) {
     this.core.registerPermission(opts, callback, scope);
 };
 
+/**
+ * Get the current notification settings.
+ *
+ * @param {Function} callback
+ *      The function to be exec as the callback
+ * @param {Object?} scope
+ *      The callback function's scope
+ */
+exports.getNotificationSettings = function (callback, scope) {
+    this.core.getNotificationSettings(callback, scope);
+};
 
 /****************
  * DEPRECATIONS *

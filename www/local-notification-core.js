@@ -475,6 +475,27 @@ exports.registerPermission = function (opts, callback, scope) {
     exec(fn, null, 'LocalNotification', 'registerPermission', params);
 };
 
+/**
+ * Get the current notification settings.
+ *
+ * @param {Function} callback
+ *      The function to be exec as the callback
+ * @param {Object?} scope
+ *      The callback function's scope
+ */
+exports.getNotificationSettings = function (callback, scope) {
+    if (typeof callback !== 'function') {
+        return;
+    }
+
+    var fn = function(settings) {
+        settings.soundEnabled = settings.soundEnabled === 'true';
+        settings.badgeEnabled = settings.badgeEnabled === 'true';
+        callback.call(scope, settings);
+    };
+    exec(fn, null, 'LocalNotification', 'getNotificationSettings');
+};
+
 
 /**********
  * EVENTS *

@@ -33,6 +33,8 @@
 - (void) hasPermission:(CDVInvokedUrlCommand*)command;
 // Register permission to show notifications
 - (void) registerPermission:(CDVInvokedUrlCommand*)command;
+// Get current notification settings
+- (void) getNotificationSettings:(CDVInvokedUrlCommand*)command;
 
 // Schedule set of notifications
 - (void) schedule:(CDVInvokedUrlCommand*)command;

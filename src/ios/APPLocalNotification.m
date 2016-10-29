@@ -21,6 +21,7 @@
  * @APPPLANT_LICENSE_HEADER_END@
  */
 
+//#import <UserNotifications/UserNotifications.h>
 #import "APPLocalNotification.h"
 #import "APPLocalNotificationOptions.h"
 #import "UIApplication+APPLocalNotification.h"
@@ -532,6 +533,69 @@
         [self hasPermission:command];
     }
 }
+
+/**
+ * Get current notification settings
+ */
+- (void) getNotificationSettings:(CDVInvokedUrlCommand*)command
+{
+    [self.commandDelegate runInBackground:^{
+        BOOL badgeEnabled, soundEnabled;
+        
+        UIUserNotificationSettings *userNotificationSettings = [UIApplication sharedApplication].currentUserNotificationSettings;
+        
+        badgeEnabled = userNotificationSettings.types & UIUserNotificationTypeBadge;
+        soundEnabled = userNotificationSettings.types & UIUserNotificationTypeSound;
+        NSString *trueString = @"true";
+        NSString *falseString = @"false";
+        NSDictionary* notifSettings = @{
+            @"soundEnabled": soundEnabled ? trueString : falseString,
+            @"badgeEnabled": badgeEnabled ? trueString : falseString
+        };
+
+        CDVPluginResult* result;
+        result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                               messageAsDictionary:notifSettings];
+        
+        [self.commandDelegate sendPluginResult:result
+                                    callbackId:command.callbackId];
+        /*
+        [[UNUserNotificationCenter currentNotificationCenter] getNotificationSettingsWithCompletionHandler:^(UNNotificationSettings * _Nonnull settings) {
+            NSString *alertStyle = @"none";
+            switch (settings.alertStyle) {
+                case UNAlertStyleNone:
+                    alertStyle = @"none";
+                    break;
+                case UNAlertStyleAlert:
+                    alertStyle = @"alert";
+                    break;
+                case UNAlertStyleBanner:
+                    alertStyle = @"banner";
+                    break;
+            }
+
+            NSString *trueString = @"true";
+            NSString *falseString = @"false";
+            NSDictionary* notifSettings = @{
+                @"alertStyle": alertStyle,
+                @"soundEnabled": settings.soundSetting == UNNotificationSettingEnabled ?
+                    trueString : falseString,
+                @"badgeEnabled": settings.badgeSetting == UNNotificationSettingEnabled ?
+                    trueString : falseString
+            };
+            
+            CDVPluginResult* result;
+            result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK
+                                   messageAsDictionary:notifSettings];
+            
+            [self.commandDelegate sendPluginResult:result
+                                        callbackId:command.callbackId];
+        }];
+         */
+    }];
+    
+}
+
 
 #pragma mark -
 #pragma mark Core Logic
