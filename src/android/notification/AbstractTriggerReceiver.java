@@ -27,10 +27,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 
 /**
@@ -38,6 +40,52 @@ import java.util.Calendar;
  * notification options and calls the event functions for further proceeding.
  */
 abstract public class AbstractTriggerReceiver extends BroadcastReceiver {
+    private static final String TAG = "LocalNotification";
+
+    public static class HookResult {
+        public boolean nextHook;
+        public boolean showNotification;
+        public HookResult() {
+            nextHook = showNotification = true;
+        }
+    }
+
+    public interface TriggerHook {
+        void init(Context context);
+        HookResult onTrigger(JSONObject notifOptions);
+    }
+
+    private static ArrayList<TriggerHook> triggerHooks = new ArrayList<TriggerHook>();
+
+    private static boolean hookInstalled = false;
+    public synchronized void installTriggerHooks(Context context) {
+        if (!hookInstalled) {
+            Log.d(TAG, "installing trigger hooks");
+            try {
+                // hardcode the class name for now
+                String [] hookClasses = new String[] {
+                        "mobi.vasona.bzzt.BzztTriggerHook"
+                };
+                for (String hookClass: hookClasses) {
+                    Log.d(TAG, "Installing hook " + hookClass);
+                    try {
+                        TriggerHook hook = (TriggerHook)Class.forName(hookClass).newInstance();
+                        hook.init(context);
+                        triggerHooks.add(hook);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to instantiate trigger hook class " + hookClass, e);
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to get metadata from manifest", e);
+            }
+        }
+    }
+
+    public static ArrayList<TriggerHook> getTriggerHooks() {
+        return triggerHooks;
+    }
+
 
     /**
      * Called when an alarm was triggered.
@@ -49,6 +97,7 @@ abstract public class AbstractTriggerReceiver extends BroadcastReceiver {
      */
     @Override
     public void onReceive(Context context, Intent intent) {
+        Log.d("Bzzt", "onReceive called");
         Bundle bundle  = intent.getExtras();
         Options options;
 
@@ -68,11 +117,34 @@ abstract public class AbstractTriggerReceiver extends BroadcastReceiver {
         if (isFirstAlarmInFuture(options))
             return;
 
+        // install trigger hooks if we haven't done so.
+        installTriggerHooks(context);
+
         Builder builder = new Builder(options);
         Notification notification = buildNotification(builder);
         boolean updated = notification.isUpdate(false);
 
-        onTrigger(notification, updated);
+        Log.d("Bzzt", "calling triggerHooks called");
+        boolean showNotif = true;
+        for (TriggerHook hook: triggerHooks) {
+            HookResult result = hook.onTrigger(notification.getOptions().getDict());
+
+            // if the current hook doesn't want to show this notification,
+            // stop the hook chain now.
+            if (!result.showNotification){
+                showNotif = false;
+                break;
+            }
+
+            // if the current hook don't allow the chain to continue, stop now.
+            if (!result.nextHook) {
+                break;
+            }
+        }
+
+        if (showNotif) {
+            onTrigger(notification, updated);
+        }
     }
 
     /**

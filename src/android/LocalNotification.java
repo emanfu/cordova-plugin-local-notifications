@@ -608,7 +608,7 @@ public class LocalNotification extends CordovaPlugin {
      * @return
      *      "background" or "foreground"
      */
-    static String getApplicationState () {
+    public static String getApplicationState () {
         return isInBackground ? "background" : "foreground";
     }
 
